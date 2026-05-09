@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+dist
+cache
+artifacts
+coverage
+typechain-types
+.env
+.env*.local
+.env.production
+.env.production.local
+*.log
+dev-server*.log
+.playwright-cli
+tmp
