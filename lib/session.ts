@@ -1,21 +1,21 @@
 import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { randomBytes, timingSafeEqual } from "crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { verifyMessage } from "ethers";
 import { sha256Hex } from "@/lib/crypto";
-import { consumeAuthNonce, deleteSession, getAuthNonce, getSession, saveAuthNonce, saveSession, upsertUser } from "@/lib/serverStore";
+import { deleteSession, getSession, saveSession, upsertUser } from "@/lib/serverStore";
 import { WalletSession } from "@/lib/types";
 
 export const sessionCookieName = "subguardian_session";
 const sessionTtlMs = 7 * 24 * 60 * 60 * 1000;
 const nonceTtlMs = 10 * 60 * 1000;
+const tokenVersion = "sg1";
 
 export function normalizeWalletAddress(wallet: string) {
   return String(wallet || "").trim().toLowerCase();
 }
 
-export function createLoginMessage(wallet: string, nonce: string, origin = "SubGuardian") {
-  const issuedAt = new Date().toISOString();
+export function createLoginMessage(wallet: string, nonce: string, origin = "SubGuardian", issuedAt = new Date().toISOString()) {
   return {
     issuedAt,
     message: [
@@ -34,38 +34,37 @@ export function createLoginMessage(wallet: string, nonce: string, origin = "SubG
 }
 
 export async function createAuthChallenge(wallet: string, origin?: string) {
-  const nonce = randomBytes(16).toString("hex");
-  const { issuedAt, message } = createLoginMessage(wallet, nonce, origin);
+  const issuedAt = new Date().toISOString();
   const expiresAt = new Date(Date.now() + nonceTtlMs).toISOString();
-  await saveAuthNonce({
-    nonce,
-    wallet,
-    message,
+  const nonce = signToken({
+    type: "login_nonce",
+    wallet: normalizeWalletAddress(wallet),
+    random: randomBytes(16).toString("hex"),
     issuedAt,
-    expiresAt,
-    used: false
+    expiresAt
   });
+  const { message } = createLoginMessage(wallet, nonce, origin, issuedAt);
   return { nonce, message, expiresAt };
 }
 
 export async function verifyWalletLogin(input: { wallet: string; nonce: string; message: string; signature: string; userAgent?: string }) {
-  const recovered = verifyMessage(input.message, input.signature);
-  if (normalizeWalletAddress(recovered) !== normalizeWalletAddress(input.wallet)) {
-    throw new Error("Signature does not match the requested wallet.");
-  }
-
-  const nonce = await getAuthNonce(input.nonce, input.wallet);
-  if (!nonce) {
+  const challenge = verifyToken(input.nonce);
+  if (!challenge || challenge.type !== "login_nonce") {
     throw new Error("Login nonce is invalid, expired, or already used.");
   }
-
-  if (!safeEqual(nonce.message, input.message)) {
+  if (normalizeWalletAddress(String(challenge.wallet || "")) !== normalizeWalletAddress(input.wallet)) {
+    throw new Error("Login nonce is invalid for this wallet.");
+  }
+  if (!challenge.expiresAt || Date.parse(String(challenge.expiresAt)) < Date.now()) {
+    throw new Error("Login nonce is expired. Please sign in again.");
+  }
+  if (!input.message.includes(`Nonce: ${input.nonce}`) || !input.message.includes(input.wallet)) {
     throw new Error("Signed message does not match the issued login challenge.");
   }
 
-  const consumedNonce = await consumeAuthNonce(input.nonce, input.wallet);
-  if (!consumedNonce) {
-    throw new Error("Login nonce is invalid, expired, or already used.");
+  const recovered = verifyMessage(input.message, input.signature);
+  if (normalizeWalletAddress(recovered) !== normalizeWalletAddress(input.wallet)) {
+    throw new Error("Signature does not match the requested wallet.");
   }
 
   await upsertUser(input.wallet);
@@ -82,9 +81,23 @@ export async function verifyWalletLogin(input: { wallet: string; nonce: string; 
 }
 
 export async function getSessionFromCookies() {
-  const sessionId = cookies().get(sessionCookieName)?.value;
-  if (!sessionId) return null;
-  return getSession(sessionId);
+  const sessionCookie = cookies().get(sessionCookieName)?.value;
+  if (!sessionCookie) return null;
+
+  if (sessionCookie.startsWith(`${tokenVersion}.`)) {
+    const payload = verifyToken(sessionCookie);
+    if (!payload || payload.type !== "wallet_session") return null;
+    if (!payload.expiresAt || Date.parse(String(payload.expiresAt)) < Date.now()) return null;
+    return {
+      id: String(payload.id || ""),
+      wallet: String(payload.wallet || ""),
+      createdAt: String(payload.createdAt || ""),
+      expiresAt: String(payload.expiresAt || ""),
+      userAgent: payload.userAgent ? String(payload.userAgent) : undefined
+    } satisfies WalletSession;
+  }
+
+  return getSession(sessionCookie);
 }
 
 export async function requireUserSession() {
@@ -96,7 +109,7 @@ export async function requireUserSession() {
 }
 
 export function setSessionCookie(response: NextResponse, session: WalletSession) {
-  response.cookies.set(sessionCookieName, session.id, {
+  response.cookies.set(sessionCookieName, signToken({ type: "wallet_session", ...session }), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -107,7 +120,7 @@ export function setSessionCookie(response: NextResponse, session: WalletSession)
 
 export async function clearSessionCookie(response: NextResponse) {
   const sessionId = cookies().get(sessionCookieName)?.value;
-  if (sessionId) await deleteSession(sessionId);
+  if (sessionId && !sessionId.startsWith(`${tokenVersion}.`)) await deleteSession(sessionId);
   response.cookies.set(sessionCookieName, "", {
     httpOnly: true,
     sameSite: "lax",
@@ -131,4 +144,30 @@ function safeEqual(left: string, right: string) {
   const leftBuffer = Buffer.from(left);
   const rightBuffer = Buffer.from(right);
   return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function signToken(payload: Record<string, unknown>) {
+  const body = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+  return `${tokenVersion}.${body}.${hmac(body)}`;
+}
+
+function verifyToken(token: string): Record<string, unknown> | null {
+  const [version, body, signature] = String(token || "").split(".");
+  if (version !== tokenVersion || !body || !signature || !safeEqual(signature, hmac(body))) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function hmac(value: string) {
+  return createHmac("sha256", sessionSecret()).update(value).digest("hex");
+}
+
+function sessionSecret() {
+  return process.env.SUBGUARDIAN_SESSION_SECRET || process.env.SUBGUARDIAN_ENCRYPTION_SECRET || "subguardian-local-demo-session-secret";
 }
