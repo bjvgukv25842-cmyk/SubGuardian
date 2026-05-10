@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { LogOut, PlugZap, Wallet } from "lucide-react";
-import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useSignMessage, useSwitchChain } from "wagmi";
 import { zeroGChainId } from "@/lib/zeroG/chain";
 import { formatAddress } from "@/lib/utils";
 import { PrimaryButton, SecondaryButton, StatusPill } from "@/components/ui";
@@ -10,8 +10,11 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { addZeroGMainnetToWallet } from "@/lib/injectedConnector";
 
 export function WalletConnect({ onConnected }: { onConnected?: (address: string) => void }) {
-  const { t } = useLanguage();
+  const { t, p } = useLanguage();
   const [addNetworkError, setAddNetworkError] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [signingIn, setSigningIn] = useState(false);
+  const [sessionWallet, setSessionWallet] = useState("");
   const [addingNetwork, setAddingNetwork] = useState(false);
   const { address, chainId, isConnected } = useAccount();
   const { connectors, connect, error, isPending } = useConnect({
@@ -23,6 +26,7 @@ export function WalletConnect({ onConnected }: { onConnected?: (address: string)
   });
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
+  const { signMessageAsync } = useSignMessage();
 
   const wrongChain = isConnected && chainId !== zeroGChainId;
   const injectedConnector = connectors[0];
@@ -33,10 +37,45 @@ export function WalletConnect({ onConnected }: { onConnected?: (address: string)
     try {
       await addZeroGMainnetToWallet();
     } catch (error) {
-      setAddNetworkError(error instanceof Error ? error.message : "Failed to add 0G Mainnet to MetaMask.");
+      setAddNetworkError(error instanceof Error ? error.message : p.walletAuth.addNetworkFailed);
     } finally {
       setAddingNetwork(false);
     }
+  };
+
+  const signIn = async () => {
+    if (!address) return;
+    setAuthError("");
+    setSigningIn(true);
+    try {
+      const nonceResponse = await fetch("/api/auth/nonce", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: address })
+      });
+      const challenge = await nonceResponse.json();
+      if (!nonceResponse.ok) throw new Error(challenge.error || p.walletAuth.nonceFailed);
+      const signature = await signMessageAsync({ message: challenge.message });
+      const verifyResponse = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: address, nonce: challenge.nonce, message: challenge.message, signature })
+      });
+      const session = await verifyResponse.json();
+      if (!verifyResponse.ok) throw new Error(session.error || p.walletAuth.verifyFailed);
+      setSessionWallet(session.wallet);
+      onConnected?.(session.wallet);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : p.walletAuth.signInFailed);
+    } finally {
+      setSigningIn(false);
+    }
+  };
+
+  const disconnectAndSignOut = async () => {
+    await fetch("/api/auth/session", { method: "DELETE" }).catch(() => undefined);
+    setSessionWallet("");
+    disconnect();
   };
 
   if (isConnected && address) {
@@ -49,6 +88,10 @@ export function WalletConnect({ onConnected }: { onConnected?: (address: string)
           <Wallet className="h-4 w-4 text-emerald-700" />
           {formatAddress(address)}
         </div>
+        <SecondaryButton type="button" onClick={signIn} disabled={signingIn}>
+          <Wallet className="h-4 w-4" />
+          {sessionWallet ? p.walletAuth.sessionActive : signingIn ? p.walletAuth.signing : p.walletAuth.signIn}
+        </SecondaryButton>
         {wrongChain ? (
           <SecondaryButton type="button" onClick={() => switchChain({ chainId: zeroGChainId })} disabled={isSwitching}>
             <PlugZap className="h-4 w-4" />
@@ -57,13 +100,14 @@ export function WalletConnect({ onConnected }: { onConnected?: (address: string)
         ) : null}
         <SecondaryButton type="button" onClick={addNetwork} disabled={addingNetwork}>
           <PlugZap className="h-4 w-4" />
-          {addingNetwork ? "Adding..." : "Add 0G Mainnet to MetaMask"}
+          {addingNetwork ? p.walletAuth.adding : p.walletAuth.addZeroG}
         </SecondaryButton>
-        <SecondaryButton type="button" onClick={() => disconnect()}>
+        <SecondaryButton type="button" onClick={disconnectAndSignOut}>
           <LogOut className="h-4 w-4" />
           {t.wallet.disconnect}
         </SecondaryButton>
         {addNetworkError ? <p className="w-full text-right text-xs text-rose-600">{addNetworkError}</p> : null}
+        {authError ? <p className="w-full text-right text-xs text-rose-600">{authError}</p> : null}
       </div>
     );
   }
@@ -72,7 +116,7 @@ export function WalletConnect({ onConnected }: { onConnected?: (address: string)
     <div className="flex flex-col items-end gap-2">
       <SecondaryButton type="button" onClick={addNetwork} disabled={addingNetwork}>
         <PlugZap className="h-4 w-4" />
-        {addingNetwork ? "Adding..." : "Add 0G Mainnet to MetaMask"}
+        {addingNetwork ? p.walletAuth.adding : p.walletAuth.addZeroG}
       </SecondaryButton>
       <PrimaryButton
         type="button"

@@ -1,5 +1,6 @@
 node_modules
 .next
+.next-dev
 out
 dist
 cache
@@ -11,6 +12,7 @@ typechain-types
 .env.production
 .env.production.local
 *.log
+tsconfig.tsbuildinfo
 dev-server*.log
 .playwright-cli
 tmp

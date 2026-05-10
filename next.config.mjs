@@ -1,5 +1,8 @@
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
+
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const createNextConfig = (phase) => ({
+  distDir: phase === PHASE_DEVELOPMENT_SERVER ? ".next-dev" : ".next",
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
@@ -9,6 +12,6 @@ const nextConfig = {
     };
     return config;
   }
-};
+});
 
-export default nextConfig;
+export default createNextConfig;

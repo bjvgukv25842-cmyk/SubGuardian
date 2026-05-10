@@ -3,7 +3,8 @@ import { defineChain } from "viem";
 export const zeroGChainId = Number(process.env.NEXT_PUBLIC_0G_CHAIN_ID || 16661);
 export const zeroGRpcUrl = process.env.NEXT_PUBLIC_0G_RPC_URL || "https://evmrpc.0g.ai";
 export const zeroGExplorerUrl = process.env.NEXT_PUBLIC_0G_EXPLORER_URL || "https://chainscan.0g.ai";
-export const subscriptionRegistryAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "";
+export const subscriptionRegistryAddress =
+  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD";
 
 export const zeroGMainnet = defineChain({
   id: zeroGChainId,
@@ -118,4 +119,11 @@ export function explorerTxUrl(txHash: string) {
     return "";
   }
   return `${zeroGExplorerUrl.replace(/\/$/, "")}/tx/${txHash}`;
+}
+
+export function explorerAddressUrl(address: string) {
+  if (!address) {
+    return "";
+  }
+  return `${zeroGExplorerUrl.replace(/\/$/, "")}/address/${address}`;
 }

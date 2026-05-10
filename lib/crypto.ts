@@ -1,5 +1,5 @@
 import { createCipheriv, createHash, randomBytes } from "crypto";
-import { stableJson } from "@/lib/stableJson";
+import { stableJson } from "./stableJson";
 
 const algorithm = "aes-256-gcm";
 
@@ -12,12 +12,14 @@ export function analysisHashBytes32(value: unknown): `0x${string}` {
 }
 
 export function encryptJson(value: unknown, secret?: string) {
-  const plaintext = Buffer.from(stableJson(value));
+  const plaintext = new TextEncoder().encode(stableJson(value));
   const keyMaterial = secret || process.env.SUBGUARDIAN_ENCRYPTION_SECRET || "subguardian-local-demo-secret";
   const key = createHash("sha256").update(keyMaterial).digest();
   const iv = randomBytes(12);
-  const cipher = createCipheriv(algorithm, key, iv);
-  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const cipher = createCipheriv(algorithm, new Uint8Array(key), new Uint8Array(iv));
+  const encrypted = cipher.update(plaintext);
+  const final = cipher.final();
+  const ciphertext = Buffer.concat([new Uint8Array(encrypted), new Uint8Array(final)]);
   const authTag = cipher.getAuthTag();
 
   return {

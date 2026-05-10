@@ -1,4 +1,4 @@
-import { RenewalPolicy, SubscriptionItem } from "@/lib/types";
+import { RenewalPolicy, SubscriptionItem } from "./types";
 
 export const mockSubscriptions: SubscriptionItem[] = [
   {
@@ -63,5 +63,12 @@ export const defaultPolicy: RenewalPolicy = {
   priceIncreaseLimit: 15,
   defaultAction: "ask_user",
   requireManualApprovalAbove: 30,
-  allowAutoRenewForHighUsage: true
+  allowAutoRenewForHighUsage: true,
+  manualApprovalAbove: 30,
+  trustedServices: ["ChatGPT Plus", "Cursor", "OpenAI", "0G Compute"],
+  blockedServices: ["Random AI API"],
+  autoApproveBelow: 10,
+  requireApprovalForUnknownService: true,
+  maxSingleSpend: 100,
+  renewalCooldownDays: 7
 };

@@ -19,6 +19,7 @@ export function monthlyAmount(amount: number, billingCycle: string) {
 
 export function decisionToContractEnum(decision: string) {
   const map: Record<string, number> = {
+    allow: 1,
     renew: 1,
     pause: 2,
     reject: 3,
@@ -29,7 +30,7 @@ export function decisionToContractEnum(decision: string) {
 }
 
 export function decisionTone(decision?: string) {
-  if (decision === "renew") return "success";
+  if (decision === "renew" || decision === "allow") return "success";
   if (decision === "pause" || decision === "ask_user") return "warning";
   if (decision === "reject") return "danger";
   return "neutral";

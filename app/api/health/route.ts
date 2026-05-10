@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { HealthResponse } from "@/lib/types";
+import { isApiAuthConfigured } from "@/lib/apiAuth";
+import { getStoreMode } from "@/lib/serverStore";
 import { subscriptionRegistryAddress, zeroGChainId, zeroGExplorerUrl, zeroGRpcUrl } from "@/lib/zeroG/chain";
 
 export const runtime = "nodejs";
@@ -8,6 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const response: HealthResponse = {
     app: process.env.NEXT_PUBLIC_APP_NAME || "SubGuardian",
+    apiAuthConfigured: isApiAuthConfigured(),
     mockMode: {
       compute: process.env.ENABLE_MOCK_COMPUTE !== "false" || !Boolean(process.env.ZERO_G_COMPUTE_API_KEY),
       storage: process.env.ENABLE_MOCK_STORAGE !== "false" || !Boolean(process.env.ZERO_G_STORAGE_SERVER_PRIVATE_KEY)
@@ -18,7 +21,10 @@ export async function GET() {
       hasStorageRpc: Boolean(process.env.ZERO_G_STORAGE_RPC),
       hasStorageIndexer: Boolean(process.env.ZERO_G_STORAGE_INDEXER),
       hasStorageServerSigner: Boolean(process.env.ZERO_G_STORAGE_SERVER_PRIVATE_KEY),
-      hasContractAddress: Boolean(subscriptionRegistryAddress)
+      hasContractAddress: Boolean(subscriptionRegistryAddress),
+      hasApiKey: isApiAuthConfigured(),
+      hasDatabaseUrl: Boolean(process.env.SUBGUARDIAN_DATABASE_URL),
+      usesJsonStoreFallback: getStoreMode() === "json_file_local_dev_fallback"
     },
     chain: {
       chainId: zeroGChainId,

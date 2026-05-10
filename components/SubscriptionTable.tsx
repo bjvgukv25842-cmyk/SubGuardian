@@ -114,6 +114,10 @@ export function SubscriptionTable({
           <Plus className="h-4 w-4 text-emerald-700" />
           <h3 className="text-sm font-semibold text-slate-950">{t.subscription.formTitle}</h3>
         </div>
+        <p className="mb-3 text-xs leading-5 text-slate-600">
+          Demo-only seed data. Production usage signals should come from <code className="font-mono">/api/v1/usage/events</code>, gateway logs, receipts, or
+          SaaS connectors.
+        </p>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <div className="md:col-span-2">
             <FieldLabel>{t.subscription.fields.serviceName}</FieldLabel>

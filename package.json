@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "compile": "hardhat compile",
-    "test": "hardhat test",
+    "test": "hardhat test && node test-policy-engine.cjs",
     "deploy:0g": "hardhat run scripts/deploy.ts --network zeroGMainnet"
   },
   "dependencies": {

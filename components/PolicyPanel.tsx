@@ -38,8 +38,38 @@ export function PolicyPanel({ policy, onChange }: { policy: RenewalPolicy; onCha
           <TextInput
             type="number"
             min={0}
-            value={policy.requireManualApprovalAbove}
-            onChange={(event) => update("requireManualApprovalAbove", Number(event.target.value))}
+            value={policy.manualApprovalAbove ?? policy.requireManualApprovalAbove}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              onChange({ ...policy, manualApprovalAbove: value, requireManualApprovalAbove: value });
+            }}
+          />
+        </div>
+        <div>
+          <FieldLabel>{t.policy.autoApproveBelow}</FieldLabel>
+          <TextInput
+            type="number"
+            min={0}
+            value={policy.autoApproveBelow ?? 10}
+            onChange={(event) => update("autoApproveBelow", Number(event.target.value))}
+          />
+        </div>
+        <div>
+          <FieldLabel>{t.policy.maxSingleSpend}</FieldLabel>
+          <TextInput
+            type="number"
+            min={0}
+            value={policy.maxSingleSpend ?? 100}
+            onChange={(event) => update("maxSingleSpend", Number(event.target.value))}
+          />
+        </div>
+        <div>
+          <FieldLabel>{t.policy.renewalCooldownDays}</FieldLabel>
+          <TextInput
+            type="number"
+            min={0}
+            value={policy.renewalCooldownDays ?? 7}
+            onChange={(event) => update("renewalCooldownDays", Number(event.target.value))}
           />
         </div>
         <div>
@@ -59,7 +89,37 @@ export function PolicyPanel({ policy, onChange }: { policy: RenewalPolicy; onCha
           />
           {t.policy.allowAutoRenew}
         </label>
+        <label className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700 sm:col-span-2">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-slate-300 text-emerald-600"
+            checked={policy.requireApprovalForUnknownService ?? true}
+            onChange={(event) => update("requireApprovalForUnknownService", event.target.checked)}
+          />
+          {t.policy.requireApprovalForUnknown}
+        </label>
+        <div className="sm:col-span-2">
+          <FieldLabel>{t.policy.trustedServices}</FieldLabel>
+          <TextInput
+            value={(policy.trustedServices || []).join(", ")}
+            onChange={(event) => update("trustedServices", splitServices(event.target.value))}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <FieldLabel>{t.policy.blockedServices}</FieldLabel>
+          <TextInput
+            value={(policy.blockedServices || []).join(", ")}
+            onChange={(event) => update("blockedServices", splitServices(event.target.value))}
+          />
+        </div>
       </div>
     </Panel>
   );
+}
+
+function splitServices(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }

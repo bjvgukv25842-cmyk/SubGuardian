@@ -1,83 +1,93 @@
 # SubGuardian 3-Minute Demo Script
 
+Target length: 2:30 to 2:55.
+
 ## 0:00-0:20 Problem
 
-AI and Web3 users now pay for many recurring tools: LLM apps, coding copilots, image tools, RPC, indexers, APIs and cloud services. The problem is not only remembering renewals. The real problem is deciding whether a renewal should be allowed before the money is spent.
+"AI agents can now spend through wallets, API keys, usage-based billing, and subscriptions. The missing layer is pre-authorization: before an autonomous agent pays, something should check budget, usage, policy, and risk."
 
-SubGuardian is a privacy-preserving AI subscription renewal firewall built on 0G.
+"SubGuardian is an AI Agent spending firewall before autonomous payments."
 
-## 0:20-0:45 Product Dashboard
+## 0:20-0:40 Product
 
-Open the SubGuardian dashboard. Show the connected wallet area, 0G Compute mode, 0G Storage mode, monthly total, budget limit, potential savings and risk level.
+Open the dashboard.
 
-Point out that this is not a bank connector and not a payment app. It uses user-entered or imported subscription data, then creates a verifiable decision record.
+Say:
 
-## 0:45-1:20 Add Subscription and Set Policy
+"This dashboard simulates an agent, API gateway, or payment system asking SubGuardian before spending. The API returns one of four decisions: `allow`, `pause`, `reject`, or `ask_user`."
 
-Show the mock subscription queue:
+Show the request form:
 
-- ChatGPT Plus
-- Midjourney
-- Cursor
-- Notion AI
-- Random AI API
+- agentId
+- userWallet
+- serviceName
+- amount
+- reason
 
-Add one manual subscription or edit the policy fields:
+## 0:40-1:15 Spend Authorization Request
 
-- Monthly budget: 100 USDT
-- Price increase limit: 15%
-- Manual approval above: 30 USDT
-- Default action: ask_user
-- Allow auto-renew for high-usage services
+Submit the default spend authorization request.
 
-Explain that the policy is the user-controlled firewall rule set.
+Show the result fields:
 
-## 1:20-1:50 0G Compute Analysis
+- `decisionId`
+- `decision`
+- `riskScore`
+- `requiresUserApproval`
+- `analysisHash`
+- `storageRootHash`
+- `mode`
+- `proofUrl`
 
-Click **Analyze with 0G Compute**.
+Say:
 
-Show the JSON-based AI result in the dashboard:
+"This is a pre-spend decision proof. If the agent is over budget, has low usage, hits a manual approval threshold, or targets a blocked service, SubGuardian can pause, reject, or ask the user before money moves."
 
-- Overall risk
-- Budget status
-- Per-service decisions: renew, pause, reject, ask_user
-- TEE verification state
-- Trace ID
+## 1:15-1:40 Proof Page
 
-Explain that in live mode, the adapter calls 0G Compute Router or Private Computer with `verify_tee: true`. In local demo mode, the app uses deterministic mock analysis so judges can reproduce the flow without private API keys.
-
-## 1:50-2:20 0G Storage Upload
-
-Click **Upload Encrypted Profile**.
+Open `proofUrl`.
 
 Show:
 
-- AES-GCM encrypted payload
-- Storage root hash
-- Mock mode or Live 0G mode badge
-
-Explain that the subscription list, policy and AI analysis are encrypted before upload. The app stores subscription memory on 0G Storage rather than a centralized database.
-
-## 2:20-2:45 0G Chain Decision Record
-
-Click:
-
-1. **Add Subscription**
-2. **Record Analysis**
-3. **Record Decision**
-
-Show:
-
-- Contract address
-- On-chain subscription ID
+- Decision ID
 - Analysis hash
-- Latest transaction hash
-- 0G Explorer link
+- Storage root hash
+- Mode: `mock` or `0g_live`
+- Chain transaction hash field
 
-Open the Explorer link and show the transaction/events.
+Say:
 
-## 2:45-3:00 Summary
+"The API proof is generated before payment. In this submitted demo, API `chainTxHash` may be null because the chain write is completed through the dashboard wallet flow, not automatically by the backend."
 
-SubGuardian turns recurring subscriptions into a user-controlled, verifiable renewal decision layer. It combines encrypted memory on 0G Storage, private AI recommendation through 0G Compute, and user-authorized decision logs on 0G Chain.
+## 1:40-2:10 0G Chain Evidence
 
-The long-term vision is a budget firewall for AI agents before they subscribe, renew or spend.
+Open the 0G ChainScan contract:
+
+`https://chainscan.0g.ai/address/0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD`
+
+Show the contract address:
+
+`0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD`
+
+Open at least one transaction:
+
+- `https://chainscan.0g.ai/tx/0xdd0df16b1cc2261f0661930e604c26d6e21d8bb3fc7cbc4bf32bfb6b7f798dbc`
+- `https://chainscan.0g.ai/tx/0x14e766169b6e63df9d2f3adb9ee252e3e7629f9485532a39e2101df2438a209e`
+
+Say:
+
+"0G Chain is live. The contract is deployed on 0G Mainnet and these transactions succeeded with event logs."
+
+## 2:10-2:35 Storage and Compute Status
+
+Say clearly:
+
+"Storage and Compute are honest mock fallback in this submission. The code supports live 0G Storage SDK upload and live 0G Compute API calls with `verify_tee: true`, but the public demo keeps credentials out of the repository and labels mock mode explicitly."
+
+Show `mode` and `storageRootHash` in the UI.
+
+## 2:35-2:55 Close
+
+"SubGuardian gives autonomous agents a spending firewall: ask before spending, return an auditable decision, preserve encrypted decision memory, and record user-authorized decisions on 0G Chain."
+
+"Recommended track: Agentic Economy & Autonomous Applications."
