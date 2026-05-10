@@ -1,0 +1,15 @@
+.env
+.env.local
+.env*.local
+.env.production
+.env.production.local
+.git
+.next
+.next-dev
+node_modules
+artifacts
+cache
+coverage
+tmp
+*.log
+tsconfig.tsbuildinfo
