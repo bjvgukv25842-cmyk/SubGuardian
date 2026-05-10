@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { LogOut, PlugZap, Wallet } from "lucide-react";
 import { useAccount, useConnect, useDisconnect, useSignMessage, useSwitchChain } from "wagmi";
 import { zeroGChainId } from "@/lib/zeroG/chain";
@@ -16,6 +16,7 @@ export function WalletConnect({ onConnected }: { onConnected?: (address: string)
   const [signingIn, setSigningIn] = useState(false);
   const [sessionWallet, setSessionWallet] = useState("");
   const [addingNetwork, setAddingNetwork] = useState(false);
+  const signingInRef = useRef(false);
   const { address, chainId, isConnected } = useAccount();
   const { connectors, connect, error, isPending } = useConnect({
     mutation: {
@@ -44,10 +45,12 @@ export function WalletConnect({ onConnected }: { onConnected?: (address: string)
   };
 
   const signIn = async () => {
-    if (!address) return;
+    if (!address || signingInRef.current) return;
+    signingInRef.current = true;
     setAuthError("");
     setSigningIn(true);
     try {
+      await fetch("/api/auth/session", { method: "DELETE" }).catch(() => undefined);
       const nonceResponse = await fetch("/api/auth/nonce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,6 +71,7 @@ export function WalletConnect({ onConnected }: { onConnected?: (address: string)
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : p.walletAuth.signInFailed);
     } finally {
+      signingInRef.current = false;
       setSigningIn(false);
     }
   };

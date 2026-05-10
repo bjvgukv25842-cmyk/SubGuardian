@@ -62,7 +62,11 @@ const defaultPolicy = {
 
 const fetchExample = `const res = await fetch("/api/v1/spend/authorize", {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer sg_demo_local",
+    "X-SubGuardian-Demo": "developers-page"
+  },
   body: JSON.stringify({
     agentId: "research-agent",
     userWallet: "0x...",
@@ -143,7 +147,11 @@ export default function DevelopersPage() {
     try {
       const response = await fetch("/api/v1/spend/authorize", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer sg_demo_local",
+          "X-SubGuardian-Demo": "developers-page"
+        },
         body: JSON.stringify({
           ...form,
           requestedAt: new Date().toISOString(),

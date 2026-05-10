@@ -151,6 +151,7 @@ Server-only variables:
 
 ```bash
 SUBGUARDIAN_API_KEY=
+SUBGUARDIAN_DEMO_API_KEY=sg_demo_local
 SUBGUARDIAN_ENCRYPTION_SECRET=
 SUBGUARDIAN_STORE_FILE=tmp/subguardian-store.json
 SUBGUARDIAN_DATABASE_URL=
@@ -235,6 +236,8 @@ Supported decisions: `allow`, `pause`, `reject`, and `ask_user`.
 
 `idempotencyKey` prevents duplicate authorization records during agent retries. `ask_user` creates a pending dashboard approval. The merchant should poll `GET /api/v1/spend/requests/[decisionId]` before proceeding.
 
+The `/developers` page uses a built-in `sg_demo_local` token plus `X-SubGuardian-Demo: developers-page` so judges can run the API simulator without first creating a merchant account. Production integrations should use generated merchant API keys or a server-only `SUBGUARDIAN_API_KEY`.
+
 ## Build And Test
 
 ```bash
@@ -269,6 +272,7 @@ NEXT_PUBLIC_CONTRACT_ADDRESS=0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD
 ENABLE_MOCK_COMPUTE=true
 ENABLE_MOCK_STORAGE=true
 SUBGUARDIAN_API_KEY=<server-only-demo-api-key>
+SUBGUARDIAN_DEMO_API_KEY=sg_demo_local
 SUBGUARDIAN_ENCRYPTION_SECRET=<server-only-random-secret>
 ```
 

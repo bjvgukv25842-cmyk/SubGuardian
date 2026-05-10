@@ -84,6 +84,15 @@ export async function consumeAuthNonce(nonce: string, wallet: string) {
   return data.authNonces[nonce];
 }
 
+export async function getAuthNonce(nonce: string, wallet: string) {
+  const data = await readStore();
+  const record = data.authNonces[nonce];
+  if (!record || record.used || normalizeWallet(record.wallet) !== normalizeWallet(wallet) || Date.parse(record.expiresAt) < Date.now()) {
+    return null;
+  }
+  return record;
+}
+
 export async function saveSession(session: WalletSession) {
   const data = await readStore();
   data.sessions[session.id] = session;

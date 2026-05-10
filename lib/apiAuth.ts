@@ -31,10 +31,24 @@ export function validateApiKey(request: Request) {
 
 export async function validateIntegrationAuth(request: Request): Promise<IntegrationAuthContext | NextResponse> {
   const expected = process.env.SUBGUARDIAN_API_KEY;
+  const demoExpected = process.env.SUBGUARDIAN_DEMO_API_KEY;
   const token = bearerToken(request);
+  const isDeveloperDemoRequest = request.headers.get("x-subguardian-demo") === "developers-page";
 
   if (expected && token && token === expected) {
     return { ok: true, authType: "global_api_key" };
+  }
+
+  if (demoExpected && token && token === demoExpected) {
+    return { ok: true, authType: "global_api_key" };
+  }
+
+  if (isDeveloperDemoRequest && token === "sg_demo_local") {
+    return {
+      ok: true,
+      authType: "dev_unconfigured",
+      warning: "Developer Demo request accepted with the built-in demo token. Production integrations should use merchant API keys."
+    };
   }
 
   if (token) {

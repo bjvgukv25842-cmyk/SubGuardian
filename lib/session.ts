@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { randomBytes, timingSafeEqual } from "crypto";
 import { verifyMessage } from "ethers";
 import { sha256Hex } from "@/lib/crypto";
-import { consumeAuthNonce, deleteSession, getSession, saveAuthNonce, saveSession, upsertUser } from "@/lib/serverStore";
+import { consumeAuthNonce, deleteSession, getAuthNonce, getSession, saveAuthNonce, saveSession, upsertUser } from "@/lib/serverStore";
 import { WalletSession } from "@/lib/types";
 
 export const sessionCookieName = "subguardian_session";
@@ -54,13 +54,18 @@ export async function verifyWalletLogin(input: { wallet: string; nonce: string; 
     throw new Error("Signature does not match the requested wallet.");
   }
 
-  const nonce = await consumeAuthNonce(input.nonce, input.wallet);
+  const nonce = await getAuthNonce(input.nonce, input.wallet);
   if (!nonce) {
     throw new Error("Login nonce is invalid, expired, or already used.");
   }
 
   if (!safeEqual(nonce.message, input.message)) {
     throw new Error("Signed message does not match the issued login challenge.");
+  }
+
+  const consumedNonce = await consumeAuthNonce(input.nonce, input.wallet);
+  if (!consumedNonce) {
+    throw new Error("Login nonce is invalid, expired, or already used.");
   }
 
   await upsertUser(input.wallet);
