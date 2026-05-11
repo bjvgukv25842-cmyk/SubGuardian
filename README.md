@@ -1,85 +1,225 @@
 # SubGuardian
 
-**AI Agent spending firewall before autonomous payments.**
+**SubGuardian is a non-custodial pre-spend approval and audit layer for Web3 subscriptions, wallet autopay, and AI Agent spending.**
 
-SubGuardian is a non-custodial Web3 wallet autopay, subscription authorization, and AI Agent spending policy manager built for the **0G APAC Hackathon**. It lets a user connect a wallet, sign in with that wallet, configure spending rules, review recurring approvals, and force integrated AI agents or merchants to ask SubGuardian before spending.
+**SubGuardian 是面向 Web3 订阅、钱包自动扣费和 AI Agent 支出的非托管花费前审批与审计层。**
 
-The product is intentionally non-custodial: SubGuardian does **not** store user private keys, does **not** custody assets, and does **not** claim it can stop every transaction an EOA user signs directly. It provides pre-spend authorization for integrated agents/merchants today, plus an architecture path toward Safe/account-abstraction guards.
+SubGuardian helps Web3 users and AI Agent operators define spending policy before money moves.
+It gives merchants, API gateways, and autonomous agents a pre-spend authorization API that returns `allow`, `pause`, `reject`, or `ask_user`.
+Each decision includes policy output, risk scoring, hash-based proof metadata, and clear live/mock labeling.
+The current hackathon MVP uses live 0G Chain evidence.
+0G Storage and 0G Compute adapters are implemented, but they run as labeled mock/fallback in the public demo unless live credentials are configured.
 
-## Hackathon Fit
+SubGuardian is intentionally non-custodial:
 
-- **Hackathon:** 0G APAC Hackathon on HackQuest
-- **Recommended track:** Agentic Economy & Autonomous Applications
-- **Repository:** https://github.com/bjvgukv25842-cmyk/SubGuardian
-- **One-liner:** AI Agent spending firewall before autonomous payments
-- **Target users:** Web3 users, AI-agent operators, API gateways, SaaS merchants, and wallet security teams
-- **Core 0G value:** verifiable spending decisions, encrypted decision memory, and AI-assisted risk analysis for autonomous economic activity
+- It does **not** store private keys.
+- It does **not** custody user assets.
+- It does **not** sign transactions for users.
+- Wallet login is signed through the user's wallet.
+- Current dashboard approval actions are bound to that wallet session.
+- The current MVP records approval/audit proofs and does **not** process real payments.
 
-Autonomous agents increasingly spend through API keys, wallets, subscriptions, usage-based billing, and payment rails. SubGuardian adds the missing control point: before an agent pays, it checks budget, usage, approval risk, trusted/blocked services, and user policy, then returns `allow`, `pause`, `reject`, or `ask_user` with an auditable proof.
+## 1. Problem
 
-## What Judges Can Test
+Web3 users and AI Agents are starting to use more automatic subscriptions, API credits, compute credits, SaaS tools, DeFi bots, and agent services.
+Traditional subscription management tools are designed for cards and centralized accounts.
+They do not fit wallet-based spending, autonomous agents, API-key billing, or usage-based Web3 infrastructure.
 
-### User SaaS Flow
+AI Agents may spend through wallets, API keys, subscription approvals, and metered billing.
+Users need a way to set budgets, whitelists, blacklists, single-spend limits, and human approval rules **before** a payment or renewal happens.
+They also need an audit trail proving that a spend request passed through policy checks, risk analysis, and user approval.
 
-- `/` - product entry and wallet login screen
-- `/dashboard` - wallet overview, policies, subscriptions, pending approvals, recent decisions, risk alerts, monthly spend, and audit records
-- `/dashboard/policies` - wallet-owned spending policy persistence
-- `/dashboard/wallet` - wallet scan and approval-risk view with honest fallback labeling
-- `/dashboard/subscriptions` - detected recurring approval management
-- `/dashboard/approvals` - user approval/rejection flow for `ask_user` spend requests
-- `/dashboard/audit` - proof and optional 0G Chain record list
-- `/proof/[id]` - verifiable decision receipt
-- `/settings` - runtime live/mock mode status
+Directly custodying assets or saving private keys would create the wrong security model.
+SubGuardian uses a non-custodial design: it controls the authorization layer for integrated agents and merchants, while users keep control of their wallets.
 
-### Developer / Integration Flow
+## 2. Solution
 
-- `/developers` - Developer Demo / API Simulator for pre-spend authorization
-- `/developers/portal` - merchant/agent registration and hashed API key generation
-- `POST /api/v1/spend/authorize` - merchant/agent pre-spend authorization API
-- `GET /api/v1/spend/requests/[id]` - merchant polling endpoint for decision status
-- `POST /api/v1/usage/events` - usage ledger endpoint for AI-agent activity
+SubGuardian adds a pre-spend approval layer between a user wallet and integrated merchants, API gateways, or AI Agents.
 
-## 0G Integration Status
+1. A user connects a wallet and signs in with a wallet signature.
+2. The user creates a wallet-owned spending policy with monthly budget, single-spend cap, trusted services, blocked services, unknown-service behavior, manual approval threshold, and optional emergency pause.
+3. A merchant, AI Agent, or API gateway calls `POST /api/v1/spend/authorize` before spending.
+4. The policy engine checks budget, limits, whitelist, blacklist, usage signal, and approval thresholds.
+5. The AI risk adapter can refine the result with `riskScore`, recommendation text, and `analysisHash`.
+6. If the result requires human approval, the dashboard creates a pending `ask_user` request.
+7. The user approves or rejects in the dashboard. SubGuardian updates the stored decision for merchant polling.
+8. Proof metadata, analysis hashes, storage roots, and chain links are shown on `/proof/[id]` and `/dashboard/audit`.
+9. Judges can verify live 0G Chain activity through the contract and transaction links below.
 
-| 0G component | Current status | Evidence / implementation |
+## 3. Hackathon Fit
+
+| Item | Details |
+| --- | --- |
+| Hackathon | [0G APAC Hackathon](https://www.hackquest.io/zh-cn/hackathons/0G-APAC-Hackathon) |
+| Recommended track | Track 3 — Agentic Economy & Autonomous Applications |
+| Direction | Financial Rails / Operational Tools / Agentic Economy |
+| Why this track | Automated billing, AI Agent spending, pre-spend approval, self-custodial wallet control, and verifiable audit trails |
+| Target users | Web3 users, AI Agent operators, API gateways, SaaS merchants, wallet/security teams, and small teams using AI tools plus Web3 infrastructure |
+
+Track 3 explicitly covers financial rails, automated billing, operational tools, and self-custodial agent wallets.
+SubGuardian is built around that exact problem: autonomous software should ask for policy-based authorization before spending.
+
+## 4. What Judges Can Test
+
+Judges can test the product without real merchants by using the built-in developer simulator.
+
+### User Dashboard Flow
+
+- `/`: landing page and wallet login.
+- `/dashboard`: wallet overview, policies, subscriptions, approvals, risk alerts, audit records, and recent decisions.
+- `/dashboard/policies`: create and edit wallet-owned spending policy.
+- `/dashboard/wallet`: wallet scan and approval risk view, with fallback data labeling.
+- `/dashboard/subscriptions`: recurring approval / subscription candidate management.
+- `/dashboard/approvals`: approve or reject pending `ask_user` spend requests.
+- `/dashboard/audit`: proof and chain evidence list from stored decisions and chain records.
+- `/proof/[id]`: verifiable decision receipt for a stored decision.
+- `/settings`: mock/live status for 0G Chain, 0G Storage, 0G Compute, and API auth.
+
+### Developer / Merchant / Agent Flow
+
+- `/developers`: API simulator for pre-spend authorization.
+- `/developers/portal`: merchant/agent registration and API key foundation.
+- `POST /api/v1/spend/authorize`: merchant/agent pre-spend authorization API.
+- `GET /api/v1/spend/requests/[id]`: merchant polling endpoint.
+- `POST /api/v1/usage/events`: usage ledger endpoint.
+
+## 5. MVP Scope
+
+Current MVP demonstrates:
+
+- Non-custodial wallet login.
+- Wallet-owned spending policies.
+- Pre-spend authorization API.
+- Merchant/agent spend request simulation.
+- Policy-based decision engine.
+- AI risk analysis adapter.
+- Encrypted storage adapter.
+- User approval/rejection dashboard.
+- Proof page.
+- Live 0G Chain contract evidence.
+- Mock/live mode labeling.
+
+Current MVP does **not**:
+
+- Process real payments.
+- Custody user funds.
+- Store private keys.
+- Cancel real-world subscriptions.
+- Connect to real bank accounts.
+- Guarantee blocking direct EOA transactions signed outside SubGuardian.
+- Replace Safe/account-abstraction guards yet.
+
+Roadmap:
+
+- Safe/account abstraction guard integration.
+- Live merchant integrations.
+- Production database.
+- Live 0G Storage with dedicated server signer.
+- Live 0G Compute credentials.
+- API key rotation and revocation UI.
+- Webhook workers.
+- Rate limiting.
+- Historical wallet indexer.
+
+## 6. 0G Integration
+
+| 0G Component | Status | How SubGuardian Uses It | Evidence |
+| --- | --- | --- | --- |
+| 0G Chain | **Live** | Deployed audit contract. Records subscription, analysis, decision, and storage-root events depending on the called function. | Contract `0xaC87...E9fD`; verified tx links in Section 7; `contracts/SubscriptionPolicyRegistry.sol`; `lib/zeroG/chain.ts`. |
+| 0G Storage | **Mock fallback in public demo, live adapter implemented** | Encrypts decision/profile payloads with AES-256-GCM. Mock roots are labeled `0g-mock-*`. Live upload requires a dedicated server signer. | `lib/zeroG/storage.ts`; `.env.example`; do not claim live storage unless configured and tested. |
+| 0G Compute | **Mock fallback in public demo, live adapter implemented** | Risk analysis adapter. Live requests include `verify_tee: true` when credentials are configured. Mock results do not claim TEE verification. | `lib/zeroG/compute.ts`; `.env.example`; `ENABLE_MOCK_COMPUTE=true` in public demo. |
+
+### Why 0G Matters
+
+0G Chain gives SubGuardian public verifiability for audit evidence.
+0G Storage fits encrypted decision/proof memory, where users and agents need persistent records without exposing raw sensitive data.
+0G Compute fits AI risk analysis for autonomous agent spending, especially when secure execution and verifiable inference are needed.
+
+The 0G stack is a strong fit for AI x Web3 applications that need scale, persistence, verifiability, and secure execution across autonomous economic workflows.
+
+## 7. Live 0G Chain Evidence
+
+| Evidence | Link | What it proves |
 | --- | --- | --- |
-| 0G Chain | **Live** | `SubscriptionPolicyRegistry` is deployed on 0G Mainnet with successful transactions and event logs. |
-| 0G Storage | **Mock fallback in public demo, live adapter implemented** | `lib/zeroG/storage.ts` encrypts payloads and supports `@0glabs/0g-ts-sdk` upload when a dedicated server signer is configured. Mock roots are labeled `0g-mock-*`. |
-| 0G Compute | **Mock fallback in public demo, live adapter implemented** | `lib/zeroG/compute.ts` supports live API calls and sends `verify_tee: true` when 0G Compute credentials are configured. Mock results are labeled `mode: "mock"`. |
+| Contract | [0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD](https://chainscan.0g.ai/address/0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD) | `SubscriptionPolicyRegistry` is deployed on 0G Mainnet. |
+| Tx 1 | [0xdd0df16b1cc2261f0661930e604c26d6e21d8bb3fc7cbc4bf32bfb6b7f798dbc](https://chainscan.0g.ai/tx/0xdd0df16b1cc2261f0661930e604c26d6e21d8bb3fc7cbc4bf32bfb6b7f798dbc) | Successful transaction to the SubGuardian contract, receipt status `0x1`, one event log, block `32657250`. |
+| Tx 2 | [0x14e766169b6e63df9d2f3adb9ee252e3e7629f9485532a39e2101df2438a209e](https://chainscan.0g.ai/tx/0x14e766169b6e63df9d2f3adb9ee252e3e7629f9485532a39e2101df2438a209e) | Successful transaction to the SubGuardian contract, receipt status `0x1`, one event log, block `32740660`. |
 
-The UI and API intentionally distinguish **Live 0G Chain**, **Mock Storage**, **Mock Compute**, **API proof**, and **user-signed chain transaction**. Mock services are never presented as live.
+Verification details:
 
-## Live 0G Chain Evidence
+- RPC used for verification: `https://evmrpc.0g.ai`
+- Contract file: `contracts/SubscriptionPolicyRegistry.sol`
+- 0G config and ABI file: `lib/zeroG/chain.ts`
+- Explorer/proof UI file: `components/ProofCredential.tsx`
+- Chain record API for user-submitted transaction links: `app/api/user/chain-records/route.ts`
+- Evidence doc: `docs/submission-evidence.md`
 
-- **Contract:** `0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD`
-- **Explorer:** https://chainscan.0g.ai/address/0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD
-- **RPC used for verification:** `https://evmrpc.0g.ai`
+The deployed contract supports `addSubscription`, `recordAnalysis`, `recordDecision`, `updatePolicyStorage`, and read helpers.
+API `chainTxHash` can be `null` because the API generates a pre-spend proof before payment.
+Chain evidence is recorded through user-authorized wallet/transaction flows or submitted chain record metadata, not by storing a backend user key.
 
-Verified transactions:
+Current code boundary:
 
-| Transaction | Explorer | Status |
-| --- | --- | --- |
-| `0xdd0df16b1cc2261f0661930e604c26d6e21d8bb3fc7cbc4bf32bfb6b7f798dbc` | https://chainscan.0g.ai/tx/0xdd0df16b1cc2261f0661930e604c26d6e21d8bb3fc7cbc4bf32bfb6b7f798dbc | Success, receipt status `0x1`, one event log |
-| `0x14e766169b6e63df9d2f3adb9ee252e3e7629f9485532a39e2101df2438a209e` | https://chainscan.0g.ai/tx/0x14e766169b6e63df9d2f3adb9ee252e3e7629f9485532a39e2101df2438a209e | Success, receipt status `0x1`, one event log |
+- `lib/zeroG/chain.ts` defines the 0G Mainnet config, ABI, contract address, and Explorer helpers.
+- `components/ProofCredential.tsx` displays contract and transaction proof links.
+- `app/api/user/chain-records/route.ts` stores user-submitted transaction links for audit records.
+- The current frontend does not expose an active `writeContract` caller for judges to trigger directly from a page.
+- The live ChainScan links above are the authoritative 0G Chain evidence for this MVP submission.
 
-The deployed contract supports subscription registration, analysis recording, decision recording, and policy storage hash updates. See `contracts/SubscriptionPolicyRegistry.sol` and `lib/zeroG/chain.ts`.
+## 8. Product Capabilities
 
-## Product Capabilities
+### Wallet & Session
 
-- Wallet connection through injected EVM wallets such as MetaMask, Rabby, and OKX Wallet
-- Sign-in with wallet signature and HttpOnly session creation
-- Session-owned user APIs; user-owned data is derived from the session wallet, not trusted frontend `userWallet` fields
-- Spending policy management: monthly budget, single-spend cap, daily/weekly/monthly limits, whitelist, blacklist, unknown-service default, manual approval threshold, agent policy, merchant policy, and emergency pause
-- Wallet overview and approval-risk scanning for configured 0G/EVM RPC data with explicit fallback labeling
-- Recurring spend/subscription detection from known approvals and wallet scan results
-- Merchant/agent API key foundation with hashed key storage
-- Idempotent spend authorization API for agents and merchants
-- `ask_user` pending approval flow in the dashboard
-- Proof page with decision hash, storage root, policy hash, mode, TEE status, signer wallet, tx hash, and Explorer links when available
-- Live/mock health status through `/api/health` and `/settings`
-- English/Chinese UI mode with consistent product content
+- EVM wallet connection through injected wallets such as MetaMask, Rabby, and OKX Wallet.
+- Wallet signature login.
+- HttpOnly session cookie.
+- Short-lived signed login challenges with signature verification.
+- No private key storage.
 
-## Architecture
+### Spending Policy
+
+- Monthly budget.
+- Single spend cap.
+- Daily, weekly, and monthly limits.
+- Trusted services whitelist.
+- Blocked services blacklist.
+- Manual approval threshold.
+- Unknown service default action.
+- Emergency pause.
+- Agent and merchant policy maps in the data model.
+
+### Pre-Spend Authorization
+
+- Merchant/agent API.
+- Bearer auth via global API key, demo key, or hashed merchant API key.
+- `idempotencyKey` for retry-safe authorization.
+- Decisions: `allow`, `pause`, `reject`, `ask_user`.
+- Pending approval dashboard for `ask_user`.
+- Merchant polling endpoint.
+- Usage ledger endpoint for future decision quality.
+
+### AI Risk & Proof
+
+- Risk score.
+- Recommendation / reason.
+- Analysis hash.
+- Policy hash.
+- Storage root hash.
+- Proof page.
+- TEE status label.
+- Explorer links when a chain transaction hash is available.
+
+### Wallet Risk View
+
+- Native balance read through configured 0G/EVM RPC.
+- Known approval parser through `SUBGUARDIAN_KNOWN_APPROVALS`.
+- Approval risk labels, including unlimited approval detection.
+- Subscription candidate detection from approvals.
+- Clear `real_wallet_data` / `limited_rpc_fallback` / `simulated_demo_data` labeling.
+
+Known limitation: the current wallet scanner is not a full historical indexer. Production should add an indexed approval and transaction history service.
+
+## 9. Architecture
 
 ```mermaid
 flowchart TB
@@ -90,35 +230,132 @@ flowchart TB
   AUTHZ --> POLICY["Policy Engine"]
   USERAPI --> POLICY
   POLICY --> STORE["Server Store Adapter"]
-  POLICY --> SCAN["Wallet Scanner / Approval Parser"]
   POLICY --> COMPUTE["0G Compute Adapter"]
   POLICY --> STORAGE["0G Storage Adapter"]
-  UI --> CHAIN["0G Chain Wallet Write Flow"]
+  UI --> CHAIN["0G Chain Contract Evidence / Chain Record"]
   CHAIN --> EXPLORER["0G ChainScan Proof"]
 ```
 
-Important files:
+Module explanation:
 
-- `app/api/v1/spend/authorize/route.ts` - pre-spend authorization API
-- `app/api/v1/spend/requests/[id]/route.ts` - decision polling
-- `app/api/v1/usage/events/route.ts` - usage ledger events
-- `app/api/auth/nonce/route.ts` and `app/api/auth/verify/route.ts` - wallet signature login
-- `app/api/user/policy/route.ts` - session-owned policy API
-- `app/api/user/wallet/scan/route.ts` - wallet scan endpoint
-- `components/WalletConnect.tsx` - connect wallet and sign in
-- `components/DashboardClient.tsx` - SaaS dashboard overview
-- `components/PolicyDashboardClient.tsx` - policy management
-- `components/ProofCredential.tsx` - proof receipt UI
-- `lib/session.ts` - nonce/session verification
-- `lib/policyEngine.ts` - deterministic spend authorization
-- `lib/walletScanner.ts` - wallet data scanner and approval parser
-- `lib/apiAuth.ts` - merchant/global API key auth
-- `lib/serverStore.ts` - local store adapter with production database shape
-- `lib/zeroG/chain.ts` - 0G Mainnet config, contract ABI, Explorer links
-- `lib/zeroG/storage.ts` - encrypted 0G Storage adapter
-- `lib/zeroG/compute.ts` - 0G Compute adapter with `verify_tee: true`
+- `Next.js Dashboard`: user-facing wallet login, policy, approvals, audit, and proof pages.
+- `Wallet Signature Session`: SIWE-style message flow using nonce, wallet signature, and HttpOnly session.
+- `Session-Owned User APIs`: user data is derived from the authenticated wallet session.
+- `Pre-Spend Authorization API`: merchant/agent API called before a spend.
+- `Policy Engine`: deterministic budget, whitelist, blacklist, limit, and approval decision logic.
+- `Server Store Adapter`: local JSON/memory persistence with a production database-shaped interface.
+- `0G Compute Adapter`: live-or-mock risk analysis adapter.
+- `0G Storage Adapter`: encrypted proof/decision payload adapter.
+- `0G Chain`: deployed contract and ChainScan evidence for verifiable audit records.
 
-## Local Setup
+## 10. Key Files
+
+| File | Purpose |
+| --- | --- |
+| `app/api/v1/spend/authorize/route.ts` | Main merchant/agent pre-spend authorization API. |
+| `app/api/v1/spend/requests/[id]/route.ts` | Merchant polling endpoint for decision status. |
+| `app/api/v1/usage/events/route.ts` | Usage ledger endpoint. |
+| `app/api/v1/decisions/[id]/route.ts` | Decision detail API for session owner or authenticated integration. |
+| `app/api/auth/nonce/route.ts` | Creates wallet login nonce and message. |
+| `app/api/auth/verify/route.ts` | Verifies wallet signature and creates session. |
+| `app/api/auth/session/route.ts` | Reads or clears current session. |
+| `app/api/user/policy/route.ts` | Session-owned policy read/update API. |
+| `app/api/user/wallet/scan/route.ts` | Wallet scan endpoint. |
+| `app/api/user/approvals/[id]/route.ts` | User approve/reject endpoint for pending requests. |
+| `app/api/user/chain-records/route.ts` | Stores user-submitted chain tx evidence links. |
+| `app/api/dashboard/summary/route.ts` | Dashboard summary aggregation. |
+| `app/api/merchants/route.ts` | Merchant/agent registration foundation. |
+| `app/api/merchants/[id]/api-keys/route.ts` | Hashed merchant API key creation/listing. |
+| `components/WalletConnect.tsx` | Connect wallet and sign in. |
+| `components/DashboardClient.tsx` | Main dashboard overview. |
+| `components/PolicyDashboardClient.tsx` | Policy management UI. |
+| `components/ListPagesClient.tsx` | Wallet, subscriptions, approvals, and audit list pages. |
+| `components/ProofCredential.tsx` | Proof receipt UI. |
+| `components/SettingsClient.tsx` | Runtime live/mock status UI. |
+| `lib/session.ts` | Nonce, signature verification, session cookie helpers. |
+| `lib/policyEngine.ts` | Deterministic spend authorization engine. |
+| `lib/walletScanner.ts` | Wallet scan and approval parser. |
+| `lib/apiAuth.ts` | Global/demo/merchant API key auth and hashing. |
+| `lib/serverStore.ts` | Local store adapter and persistence interface. |
+| `lib/zeroG/chain.ts` | 0G Mainnet config, contract ABI, Explorer link helpers. |
+| `lib/zeroG/storage.ts` | Encrypted 0G Storage adapter with mock fallback. |
+| `lib/zeroG/compute.ts` | 0G Compute adapter with `verify_tee: true` in live mode. |
+| `lib/zeroG/decisionLog.ts` | Authorization mode and decision snapshot persistence helper. |
+| `contracts/SubscriptionPolicyRegistry.sol` | 0G Chain contract. |
+| `scripts/deploy.ts` | Hardhat deploy script for 0G Mainnet. |
+| `test/SubscriptionPolicyRegistry.test.ts` | Contract tests. |
+| `test-policy-engine.cjs` | Policy engine and integration behavior tests. |
+
+## 11. API Example
+
+External agents and merchants call this endpoint before spending:
+
+```http
+POST /api/v1/spend/authorize
+Authorization: Bearer <merchant-or-global-api-key>
+Content-Type: application/json
+```
+
+Request example:
+
+```json
+{
+  "agentId": "research-agent",
+  "merchantId": "mch_demo",
+  "userWallet": "0x1111111111111111111111111111111111111111",
+  "spender": "0x2222222222222222222222222222222222222222",
+  "token": "0xTokenOrNative",
+  "serviceName": "Midjourney",
+  "category": "AI Tool",
+  "amount": 30,
+  "currency": "USDT",
+  "billingCycle": "monthly",
+  "reason": "Need image generation for a marketing campaign",
+  "requestedAt": "2026-05-10T12:00:00.000Z",
+  "idempotencyKey": "agent-run-123-midjourney-renewal"
+}
+```
+
+Response example:
+
+```json
+{
+  "decisionId": "dec_...",
+  "decision": "pause",
+  "riskScore": 82,
+  "requiresUserApproval": true,
+  "usageSignal": "low",
+  "budgetStatus": "over_budget",
+  "analysisHash": "0x...",
+  "storageRootHash": "0g-mock-...",
+  "policyHash": "0x...",
+  "teeVerified": false,
+  "chainTxHash": null,
+  "proofUrl": "/proof/dec_...",
+  "createdAt": "2026-05-10T12:00:00.000Z",
+  "mode": "mock",
+  "status": "pending_user_approval"
+}
+```
+
+Decision meanings:
+
+- `allow`: merchant may proceed under current policy.
+- `pause`: merchant should hold the spend and wait for policy, usage, or user review changes.
+- `reject`: merchant must not proceed unless the user changes policy and submits a new request.
+- `ask_user`: merchant must wait for dashboard approval or rejection.
+
+`idempotencyKey` prevents duplicate authorization records during retries. If the decision is `ask_user`, SubGuardian creates a pending dashboard approval. The merchant should poll:
+
+```http
+GET /api/v1/spend/requests/[decisionId]
+Authorization: Bearer <merchant-or-global-api-key>
+```
+
+The `/developers` page includes a built-in demo token for judging, so judges can try the simulator without setting up a merchant account.
+Production integrations should use generated merchant API keys from `/developers/portal` or a server-only `SUBGUARDIAN_API_KEY`.
+
+## 12. Local Setup
 
 ```bash
 npm install
@@ -126,16 +363,20 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open:
 
-On Windows PowerShell, copy the environment file with:
+```text
+http://localhost:3000
+```
+
+Windows PowerShell equivalent:
 
 ```powershell
 Copy-Item .env.example .env.local
 npm run dev
 ```
 
-## Environment Variables
+## 13. Environment Variables
 
 Public browser variables:
 
@@ -172,81 +413,24 @@ ZERO_G_STORAGE_FEE=0
 ENABLE_MOCK_STORAGE=true
 ```
 
-Security rule: never commit `.env.local`, private keys, wallet seed phrases, `ZERO_G_COMPUTE_API_KEY`, or `ZERO_G_STORAGE_SERVER_PRIVATE_KEY`. For a public Vercel demo, keep `ENABLE_MOCK_COMPUTE=true` and `ENABLE_MOCK_STORAGE=true` unless live credentials and a dedicated server signer are intentionally configured.
+Security rule: never commit `.env.local`, private keys, wallet seed phrases, `ZERO_G_COMPUTE_API_KEY`, or `ZERO_G_STORAGE_SERVER_PRIVATE_KEY`.
+For a public Vercel demo, keep `ENABLE_MOCK_COMPUTE=true` and `ENABLE_MOCK_STORAGE=true` unless live credentials and a dedicated server signer are intentionally configured.
 
-## Demo Flow For Judges
+## 14. Build, Test, and Deploy
 
-1. Visit `/`.
-2. Connect wallet.
-3. Sign the SubGuardian login message. This creates a session only; it does not grant custody or transfer approval.
-4. Open `/dashboard` and review wallet overview, active policies, detected subscriptions, pending approvals, risk alerts, spend summary, and audit records.
-5. Open `/dashboard/policies`, change spending limits or trusted/blocked services, and save the policy.
-6. Open `/dashboard/wallet` and run wallet scan. The UI labels whether data is real wallet data or limited fallback.
-7. Open `/developers` and submit a pre-spend authorization request.
-8. Open the returned proof URL and inspect `decisionId`, `analysisHash`, `storageRootHash`, `mode`, `chainTxHash`, signer wallet, and 0G links.
-9. Open the 0G ChainScan contract and transaction links above to verify live 0G Chain evidence.
-10. If the decision requires user approval, open `/dashboard/approvals` and approve or reject it.
-
-## API Example
-
-External agents and merchants call this before spending:
-
-```http
-POST /api/v1/spend/authorize
-Authorization: Bearer <merchant-or-global-api-key>
-Content-Type: application/json
-```
-
-```json
-{
-  "agentId": "research-agent",
-  "merchantId": "mch_demo",
-  "userWallet": "0x1111111111111111111111111111111111111111",
-  "spender": "0x2222222222222222222222222222222222222222",
-  "token": "0xTokenOrNative",
-  "serviceName": "Midjourney",
-  "category": "AI Tool",
-  "amount": 30,
-  "currency": "USDT",
-  "billingCycle": "monthly",
-  "reason": "Need image generation for a marketing campaign",
-  "requestedAt": "2026-05-10T12:00:00.000Z",
-  "idempotencyKey": "agent-run-123-midjourney-renewal"
-}
-```
-
-Example response:
-
-```json
-{
-  "decisionId": "dec_...",
-  "decision": "pause",
-  "riskScore": 82,
-  "requiresUserApproval": true,
-  "usageSignal": "low",
-  "budgetStatus": "over_budget",
-  "analysisHash": "0x...",
-  "storageRootHash": "0g-mock-...",
-  "chainTxHash": null,
-  "proofUrl": "/proof/dec_...",
-  "mode": "mock"
-}
-```
-
-Supported decisions: `allow`, `pause`, `reject`, and `ask_user`.
-
-`idempotencyKey` prevents duplicate authorization records during agent retries. `ask_user` creates a pending dashboard approval. The merchant should poll `GET /api/v1/spend/requests/[decisionId]` before proceeding.
-
-The `/developers` page uses a built-in `sg_demo_local` token plus `X-SubGuardian-Demo: developers-page` so judges can run the API simulator without first creating a merchant account. Production integrations should use generated merchant API keys or a server-only `SUBGUARDIAN_API_KEY`.
-
-## Build And Test
+Run tests:
 
 ```bash
 npm test
+```
+
+Run production build:
+
+```bash
 npm run build
 ```
 
-Equivalent explicit commands:
+Explicit command fallback:
 
 ```bash
 node node_modules/hardhat/internal/cli/cli.js test
@@ -254,83 +438,121 @@ node test-policy-engine.cjs
 node node_modules/next/dist/bin/next build
 ```
 
-Latest local verification:
-
-- Hardhat contract tests: passed, 3 tests
-- Policy engine tests: passed, including idempotency, session wallet ownership, API key hashing, pending approval flow, mock/live labeling, and wallet approval parser
-- Next.js production build: passed
-
-## Vercel Deployment Notes
-
-The app builds as a standard Next.js project. Recommended Vercel variables for the public hackathon demo:
+Deploy contract to 0G Mainnet:
 
 ```bash
-NEXT_PUBLIC_APP_NAME=SubGuardian
-NEXT_PUBLIC_0G_CHAIN_ID=16661
-NEXT_PUBLIC_0G_RPC_URL=https://evmrpc.0g.ai
-NEXT_PUBLIC_0G_EXPLORER_URL=https://chainscan.0g.ai
-NEXT_PUBLIC_CONTRACT_ADDRESS=0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD
-ENABLE_MOCK_COMPUTE=true
-ENABLE_MOCK_STORAGE=true
-SUBGUARDIAN_API_KEY=<server-only-demo-api-key>
-SUBGUARDIAN_DEMO_API_KEY=sg_demo_local
-SUBGUARDIAN_SESSION_SECRET=<server-only-random-secret>
-SUBGUARDIAN_ENCRYPTION_SECRET=<server-only-random-secret>
+npm run deploy:0g
 ```
 
-Do not configure a user wallet private key in Vercel. If live 0G Storage is enabled later, use only a dedicated server signer with limited funds and keep it server-only.
+Deploying requires `.env.local` with:
 
-The current `serverStore` is a local JSON-file adapter that mirrors the intended database schema. It is acceptable for local hackathon judging, but a production deployment should use Postgres/Supabase/Neon through the documented database adapter path.
+```bash
+PRIVATE_KEY=<dedicated-deployer-private-key>
+NEXT_PUBLIC_0G_RPC_URL=https://evmrpc.0g.ai
+NEXT_PUBLIC_0G_CHAIN_ID=16661
+```
 
-## Security Model
+Do not use a user's wallet private key for server-side storage or deployment automation.
 
-- No user private key storage
-- No custody of assets
-- Wallet signatures create sessions only
-- User-level APIs require session wallet ownership
-- Merchant APIs use bearer keys; generated merchant keys are hashed before storage
-- Nonce consumption protects login replay
-- Idempotency protects spend authorization retries
-- Proofs separate API decision creation from user-signed chain writes
-- Mock Storage/Compute are labeled as mock and do not claim TEE verification
-- EOA limitation is explicit: SubGuardian cannot stop direct transactions a user signs outside an integrated agent/merchant flow
+Vercel deployment notes:
 
-See `docs/security-model.md` for the full security model.
+- Build command: `npm run build`
+- Framework: Next.js
+- Set the public `NEXT_PUBLIC_*` variables above.
+- Set `SUBGUARDIAN_SESSION_SECRET` and `SUBGUARDIAN_ENCRYPTION_SECRET`.
+- Keep Storage/Compute mock flags enabled unless live credentials are configured.
+- The current store is a local JSON-file adapter; production should use a real database.
 
-## Known Limitations
+## 15. How Judges Can Verify 0G Chain Evidence
 
-- API `chainTxHash` can be `null` because the API creates a pre-spend proof before payment. Chain writes are completed by a user wallet flow, not by storing a backend user key.
-- 0G Storage and 0G Compute are mock/fallback in the public submitted demo unless live credentials are configured.
-- Wallet scanning has a working 0G/EVM RPC foundation and approval parser, but full historical indexing should be backed by an indexer in production.
-- The local JSON store is not a production database.
-- Webhook delivery workers, rate limiting, admin monitoring, and API key rotation/revocation UI are roadmap items.
+1. Open the contract: [0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD](https://chainscan.0g.ai/address/0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD).
+2. Open Tx 1: [0xdd0df16b1cc2261f0661930e604c26d6e21d8bb3fc7cbc4bf32bfb6b7f798dbc](https://chainscan.0g.ai/tx/0xdd0df16b1cc2261f0661930e604c26d6e21d8bb3fc7cbc4bf32bfb6b7f798dbc).
+3. Open Tx 2: [0x14e766169b6e63df9d2f3adb9ee252e3e7629f9485532a39e2101df2438a209e](https://chainscan.0g.ai/tx/0x14e766169b6e63df9d2f3adb9ee252e3e7629f9485532a39e2101df2438a209e).
+4. Confirm each transaction goes to `0xaC87E72e1aF91174EedaC91C08bF56768d6cE9fD`.
+5. Confirm each receipt is successful and includes an event log.
+6. Compare the contract interface with `contracts/SubscriptionPolicyRegistry.sol` and `lib/zeroG/chain.ts`.
 
-## Submission Docs
+Equivalent RPC verification:
 
-- `docs/submission-evidence.md` - live 0G Chain evidence and verification notes
-- `docs/hackathon-submission.md` - copy-ready HackQuest submission summary
-- `docs/demo-script.md` - 3-minute demo script
-- `docs/demo-checklist.md` - recording checklist
-- `docs/product-roadmap.md` - staged roadmap from MVP to SaaS
-- `docs/production-architecture.md` - production system architecture
-- `docs/security-model.md` - non-custodial security and compliance boundaries
-- `docs/user-guide.md` - user workflow guide
-- `docs/api-integration-guide.md` - merchant/agent integration guide
-- `docs/social-post.md` - X post draft
+```bash
+curl https://evmrpc.0g.ai \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"eth_getTransactionReceipt","params":["0xdd0df16b1cc2261f0661930e604c26d6e21d8bb3fc7cbc4bf32bfb6b7f798dbc"]}'
+```
 
-## Hackathon Checklist
+Expected result includes:
 
-- [x] GitHub repository prepared
-- [x] README explains project, 0G integration, setup, tests, security, and limitations
-- [x] Live 0G Chain contract address included
-- [x] 0G ChainScan contract and transaction links included
-- [x] Wallet login and session-owned dashboard implemented
-- [x] Pre-spend authorization API implemented
-- [x] Merchant API key foundation implemented
-- [x] Policy engine and tests implemented
-- [x] Proof page implemented
-- [x] Mock/live mode labels implemented
-- [x] English/Chinese UI mode implemented
-- [ ] Demo video URL added after recording
-- [ ] Public deployed app URL added after deployment
-- [ ] X post URL added after publishing
+```json
+{
+  "to": "0xac87e72e1af91174eedac91c08bf56768d6ce9fd",
+  "status": "0x1"
+}
+```
+
+## 16. Demo Video Guide
+
+The demo video should be under 3 minutes and show the product, user flow, and actual 0G component usage.
+
+Recommended flow:
+
+1. Open `/` and explain the one-sentence product: non-custodial pre-spend approval for Web3 subscriptions, wallet autopay, and AI Agent spending.
+2. Connect wallet and sign the login message. State clearly that this creates a session only and does not grant custody or transaction permission.
+3. Open `/dashboard/policies` and show budget, single-spend cap, whitelist, blacklist, unknown-service rule, manual approval threshold, and emergency pause.
+4. Open `/developers` and submit a spend authorization request.
+5. Show the returned `decision`, `riskScore`, `requiresUserApproval`, `analysisHash`, `storageRootHash`, `mode`, and `proofUrl`.
+6. If `ask_user` is returned, open `/dashboard/approvals` and approve or reject.
+7. Open `/proof/[id]` and show the proof receipt.
+8. Open the live 0G ChainScan contract and transaction links from Section 7.
+9. State honestly that 0G Chain is live, while Storage and Compute are mock/fallback in the public demo unless live credentials are configured.
+
+Demo script file:
+
+- `docs/demo-script.md`
+
+## 17. Security Model
+
+- SubGuardian does not save user private keys.
+- SubGuardian does not custody assets.
+- Wallet signatures create sessions only.
+- User-level APIs require the session wallet.
+- Merchant APIs use bearer keys; generated merchant keys are hashed before storage.
+- Login challenges are signed, wallet-bound, and short-lived.
+- `idempotencyKey` prevents duplicate authorization decisions during retries.
+- Mock Storage/Compute are labeled as mock and do not claim TEE verification.
+- EOA limitation is explicit: SubGuardian cannot stop direct transactions a user signs outside an integrated agent/merchant flow.
+
+Full security notes:
+
+- `docs/security-model.md`
+
+## 18. Submission Docs
+
+| File | Purpose |
+| --- | --- |
+| `docs/submission-evidence.md` | Live 0G Chain evidence and verification notes. |
+| `docs/hackathon-submission.md` | Copy-ready HackQuest submission summary. |
+| `docs/demo-script.md` | 3-minute demo script. |
+| `docs/demo-checklist.md` | Recording checklist. |
+| `docs/product-roadmap.md` | MVP-to-production roadmap. |
+| `docs/production-architecture.md` | Production architecture notes. |
+| `docs/security-model.md` | Non-custodial security and compliance boundaries. |
+| `docs/user-guide.md` | User workflow guide. |
+| `docs/api-integration-guide.md` | Merchant/agent integration guide. |
+| `docs/social-post.md` | X post draft. |
+
+## 19. Hackathon Checklist
+
+- [x] README explains project overview, problem, solution, 0G modules, architecture, local reproduction, tests, and limitations.
+- [x] Recommended track documented.
+- [x] Live 0G Chain contract address included.
+- [x] 0G ChainScan contract and transaction links included.
+- [x] Wallet login and session-owned dashboard implemented.
+- [x] Pre-spend authorization API implemented.
+- [x] Merchant API key foundation implemented.
+- [x] Policy engine and tests implemented.
+- [x] Proof page implemented.
+- [x] Mock/live mode labels implemented.
+- [x] English/Chinese UI mode implemented.
+- [ ] Demo video URL added after recording.
+- [ ] Public deployed app URL added after deployment.
+- [ ] X post URL added after publishing.

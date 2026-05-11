@@ -43,7 +43,8 @@ Both transaction receipts returned `status: 0x1`, the `to` address matches the d
 
 - Contract ABI/config: `lib/zeroG/chain.ts`
 - Contract source: `contracts/SubscriptionPolicyRegistry.sol`
-- Dashboard wallet write flow: `components/ChainPanel.tsx`
+- Proof/Explorer UI: `components/ProofCredential.tsx`
+- Chain record API: `app/api/user/chain-records/route.ts`
 - Pre-spend authorization API: `app/api/v1/spend/authorize/route.ts`
 - Proof page: `app/proof/[id]/page.tsx`
 - Storage adapter: `lib/zeroG/storage.ts`
@@ -54,15 +55,17 @@ Both transaction receipts returned `status: 0x1`, the `to` address matches the d
 
 The API route `/api/v1/spend/authorize` returns a pre-spend decision proof. Its `chainTxHash` can be `null` because the API does not automatically write to the chain from the backend.
 
-Live 0G Chain writes are completed through the dashboard wallet flow:
+Live 0G Chain evidence for the submitted MVP is the deployed contract plus the verified ChainScan transactions above.
+The codebase contains the 0G Mainnet config and contract ABI in `lib/zeroG/chain.ts`, proof/Explorer display in `components/ProofCredential.tsx`, and a chain-record API for user-submitted transaction links.
 
-1. Connect wallet.
-2. Upload encrypted profile or create a mock storage root.
-3. Run analysis.
-4. Use ChainPanel to call `addSubscription`, `recordAnalysis`, and `recordDecision`.
-5. Open the returned 0G Explorer transaction link.
+Current code boundary:
 
-This separation is intentional: backend API proofs can be generated before payment, while chain writes require a user-authorized wallet transaction in the dashboard demo.
+1. The backend API generates pre-spend decision proofs before payment.
+2. API `chainTxHash` can be `null`; this means API proof only.
+3. The current frontend does not expose an active `writeContract` caller for judges to trigger directly from a page.
+4. The live ChainScan links above are the authoritative 0G Chain evidence for this MVP submission.
+
+This separation is intentional for the hackathon MVP: SubGuardian must not store a backend user key or sign user transactions.
 
 ## Local Verification Commands
 
