@@ -489,27 +489,7 @@ Expected result includes:
 }
 ```
 
-## 16. Demo Video Guide
-
-The demo video should be under 3 minutes and show the product, user flow, and actual 0G component usage.
-
-Recommended flow:
-
-1. Open `/` and explain the one-sentence product: non-custodial pre-spend approval for Web3 subscriptions, wallet autopay, and AI Agent spending.
-2. Connect wallet and sign the login message. State clearly that this creates a session only and does not grant custody or transaction permission.
-3. Open `/dashboard/policies` and show budget, single-spend cap, whitelist, blacklist, unknown-service rule, manual approval threshold, and emergency pause.
-4. Open `/developers` and submit a spend authorization request.
-5. Show the returned `decision`, `riskScore`, `requiresUserApproval`, `analysisHash`, `storageRootHash`, `mode`, and `proofUrl`.
-6. If `ask_user` is returned, open `/dashboard/approvals` and approve or reject.
-7. Open `/proof/[id]` and show the proof receipt.
-8. Open the live 0G ChainScan contract and transaction links from Section 7.
-9. State honestly that 0G Chain is live, while Storage and Compute are mock/fallback in the public demo unless live credentials are configured.
-
-Demo script file:
-
-- `docs/demo-script.md`
-
-## 17. Security Model
+## 16. Security Model
 
 - SubGuardian does not save user private keys.
 - SubGuardian does not custody assets.
@@ -525,7 +505,7 @@ Full security notes:
 
 - `docs/security-model.md`
 
-## 18. Submission Docs
+## 17. Submission Docs
 
 | File | Purpose |
 | --- | --- |
@@ -539,20 +519,3 @@ Full security notes:
 | `docs/user-guide.md` | User workflow guide. |
 | `docs/api-integration-guide.md` | Merchant/agent integration guide. |
 | `docs/social-post.md` | X post draft. |
-
-## 19. Hackathon Checklist
-
-- [x] README explains project overview, problem, solution, 0G modules, architecture, local reproduction, tests, and limitations.
-- [x] Recommended track documented.
-- [x] Live 0G Chain contract address included.
-- [x] 0G ChainScan contract and transaction links included.
-- [x] Wallet login and session-owned dashboard implemented.
-- [x] Pre-spend authorization API implemented.
-- [x] Merchant API key foundation implemented.
-- [x] Policy engine and tests implemented.
-- [x] Proof page implemented.
-- [x] Mock/live mode labels implemented.
-- [x] English/Chinese UI mode implemented.
-- [ ] Demo video URL added after recording.
-- [ ] Public deployed app URL added after deployment.
-- [ ] X post URL added after publishing.
